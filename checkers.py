@@ -38,59 +38,31 @@ class Square(GameComponent):
     def __init__(self, color, coord):
         super().__init__(color, coord)
         self.checker = None
-        self.dimensions = (9, 5)
+        self.dimensions = (10, 5)
 
     # Updates this square's graphic based on this square's current checker properties
-    # Welcome to the jankiest part of this whole script
-    # This needs re-doing
-    # Need to separate the checker graphic from the square graphic and just insert the checker graphic where necessary
     def refresh_graphic(self):
-        self.graphic = []
-        width = self.dimensions[0]
-        height = self.dimensions[1]
+        # F = background fill
         if self.color == "RED":
             F = " "
         elif self.color == "BLACK":
-            F = "X" # F = fill
-        for row in range(height):
+            F = "X"
+        width = self.dimensions[0]
+        height = self.dimensions[1]
+        self.graphic = [("|" + ( 9 * F ))]
+        for row in range(height-2):
             row_graphic = "|"
-            if ( not self.checker ):
-                if ( row == 4 ):
-                    row_graphic += ( width * "_" )
-                else:
-                    row_graphic += ( width * " " )
-            elif ( row == 0 or row == 4 ):
-                if ( row == 4 and self.color == "RED" ):
-                    row_graphic += ( "_" * self.dimensions[0] )
-                else:
-                    row_graphic += ( F * self.dimensions[0] )
-            elif ( row == 1 ):
-                row_graphic += F
-                if ( self.checker.is_king ):
-                    if ( self.checker.color == "RED" ):
-                        row_graphic += "| RED |"
-                    elif ( self.checker.color == "BLACK" ):
-                        row_graphic += "|BLACK|"
-                    else:
-                        row_graphic += "|     |"
-                else:
-                    row_graphic += "|     |"
-                row_graphic += F
-            elif ( row == 2 ):
-                row_graphic += F
-                if ( self.checker.is_king ):
-                    row_graphic += "| KING|"
-                elif ( self.checker.color == "RED" ):
-                    row_graphic += "| RED |"
-                elif ( self.checker.color == "BLACK" ):
-                    row_graphic += "|BLACK|"
-                else:
-                    row_graphic += "|BROKE|"
-                row_graphic += F
+            if ( self.checker ):
+                row_graphic += F + self.checker.graphic[row] + F
             else:
-                row_graphic += F + "|_____|" + F
+                row_graphic += F * 9
             self.graphic.append(row_graphic)
-    # End refresh_graphic()
+        if ( self.color == "RED" ):
+            self.graphic.append(("|" + ("_" * 9)))
+        else:
+            self.graphic.append(("|" + ( 9 * F )))
+            
+        
 
     def print_graphic(self):
         for row in self.graphic:
@@ -141,4 +113,9 @@ class Checker(GameComponent):
 
 square = Square("RED", (1, 2))
 checker = Checker("RED", (3, 1))
-checker.set_graphic()
+checker.is_king = True
+checker.update_graphic()
+square.checker = checker
+square.refresh_graphic()
+for row in square.graphic:
+    print (row)
