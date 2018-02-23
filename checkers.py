@@ -7,22 +7,54 @@ class CheckersGame:
 
 
 class GameBoard:
+    
     valid_colors = ["RED","BLACK"]
+    dimensions = (8, 8)
+    rows = ['1','2','3','4','5','6','7','8']
+    columns = ['A','B','C','D','E','F','G','H']
+    
     def __init__(self):
-        self.dimensions = (8, 8)
-        self.rows = ['1','2','3','4','5','6','7','8']
-        self.columns = ['A','B','C','D','E','F','G','H']
+        self.create_new_game_board()
 
     def create_new_game_board(self):
-        self.game_board = []
+        self.board = []
         width = self.dimensions[0]
         height = self.dimensions[1]
-        first_square = ""
+        first_square_color = "BLACK"
         for row in range(height):
-            
+            square_color = first_square_color
             row_of_squares = []
-            for square in range(width):
-                row_of_squares.append(Square)
+            for column in range(width):
+                color = square_color
+                coord = (column, row)
+                row_of_squares.append(Square(color, coord))
+                square_color = "BLACK" if square_color=="RED" else "RED"
+            first_square_color = "BLACK" if first_square_color=="RED" else "RED"
+            self.board.append(row_of_squares)
+
+    def refresh_board(self):
+        for row in self.board:
+            for square in row:
+                square.refresh_graphic()
+
+    def print_board(self):
+        gameboard.refresh_board()
+        left_buffer = '     '
+        print (left_buffer + ' ' + ('_' * self.dimensions[0] * Square.dimensions[0]) + ' ')
+        for row_index in reversed(range(len(gameboard.board))):
+            row = gameboard.board[row_index]
+            for g_row in range(Square.dimensions[1]):
+                pixel_row = '  ' + GameBoard.rows[row_index] + '  ' if g_row == 2 else left_buffer
+                for square in row:
+                    pixel_row += square.graphic[g_row]
+                pixel_row += '|'
+                print(pixel_row)
+        column_row = left_buffer
+        for column in GameBoard.columns:
+            column_row += "     " + column + "    "
+        print(column_row)
+
+    
 
 
 # Practicing making use of Abstract Base Classes
@@ -35,18 +67,16 @@ class GameComponent(metaclass = ABCMeta):
 
 class Square(GameComponent):
 
+    dimensions = (10, 5)
+
     def __init__(self, color, coord):
         super().__init__(color, coord)
         self.checker = None
-        self.dimensions = (10, 5)
 
     # Updates this square's graphic based on this square's current checker properties
     def refresh_graphic(self):
         # F = background fill
-        if self.color == "RED":
-            F = " "
-        elif self.color == "BLACK":
-            F = "X"
+        F = " " if self.color == "RED" else "X"
         width = self.dimensions[0]
         height = self.dimensions[1]
         self.graphic = [("|" + ( 9 * F ))]
@@ -55,7 +85,12 @@ class Square(GameComponent):
             if ( self.checker ):
                 row_graphic += F + self.checker.graphic[row] + F
             else:
-                row_graphic += F * 9
+                if ( row == 1 ):
+                    # row_graphic += str(self.coord).center(9, F)
+                    board_coord = " " + str(GameBoard.columns[self.coord[0]]) + str(GameBoard.rows[self.coord[1]]) + " "
+                    row_graphic += str(board_coord).center(9, F)
+                else:
+                    row_graphic += F * 9
             self.graphic.append(row_graphic)
         if ( self.color == "RED" ):
             self.graphic.append(("|" + ("_" * 9)))
@@ -111,11 +146,5 @@ class Checker(GameComponent):
     
 
 
-square = Square("RED", (1, 2))
-checker = Checker("RED", (3, 1))
-checker.is_king = True
-checker.update_graphic()
-square.checker = checker
-square.refresh_graphic()
-for row in square.graphic:
-    print (row)
+gameboard = GameBoard()
+gameboard.print_board()
