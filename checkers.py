@@ -3,7 +3,15 @@ import itertools
 # TODO Abstract base class for Square / Checker?
 
 class CheckersGame:
-    pass
+    def get_checker_at_board_coord(self):
+        pass
+
+
+class GameComponent(metaclass = ABCMeta):
+    @abstractmethod
+    def __init__(self, color, coord):
+        self.color = color
+        self.coord = coord
 
 
 class GameBoard:
@@ -31,6 +39,16 @@ class GameBoard:
                 square_color = "BLACK" if square_color=="RED" else "RED"
             first_square_color = "BLACK" if first_square_color=="RED" else "RED"
             self.board.append(row_of_squares)
+        self.initial_checker_placement()
+
+    def initial_checker_placement(self):
+        for row in self.board:
+            for square in row:
+                if ( square.color == "BLACK"):
+                    if ( square.coord[1] in range(3) ):
+                        square.checker = Checker("RED", square.coord)
+                    elif ( square.coord[1] in range(len(self.board)-3, len(self.board)) ):
+                        square.checker = Checker("BLACK", square.coord)
 
     def refresh_board(self):
         for row in self.board:
@@ -54,15 +72,16 @@ class GameBoard:
             column_row += "     " + column + "    "
         print(column_row)
 
-    
-
-
-# Practicing making use of Abstract Base Classes
-class GameComponent(metaclass = ABCMeta):
-    @abstractmethod
-    def __init__(self, color, coord):
-        self.color = color
-        self.coord = coord
+    # board_coord in format of 2 character string 'A3'
+    def get_checker_at_board_coord(self, board_coord):
+        row = self.rows.index(board_coord[1])
+        column = self.columns.index(board_coord[0])
+        square = self.board[row][column]
+        if ( square.checker ):
+            return square.checker
+        else:
+            print("No checker found at coordinate " + board_coord)
+            return None
 
 
 class Square(GameComponent):
@@ -108,10 +127,17 @@ class Checker(GameComponent):
     
     def __init__(self, color, coord):
         super().__init__(color, coord)
+        self.set_board_coord()
         self.is_king = False
         self.needs_graphic_refresh = False
         self.set_move_direction()
         self.dimensions = (7, 3)
+        self.update_graphic()
+
+    def set_board_coord(self):
+        column = GameBoard.columns[self.coord[0]]
+        row = GameBoard.rows[self.coord[1]]
+        self.board_coord = (column, row)
 
     def set_move_direction(self):
         if ( self.color == "RED" ):
