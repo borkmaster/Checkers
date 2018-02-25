@@ -13,24 +13,18 @@ class CheckersGame:
 
     def new_turn(self):
         game.gameboard.print_board()
-        # While currently selected piece color not equal to player color
         print('New Turn')
         turn_complete = False
         from_square_selected = False
-        # Ask current player to select a square holding a piece to move
         while ( not from_square_selected ):
             from_square = self.get_from_square()
             from_square_selected = True
-        # While the move selection is not valid:
-        # Ask current player to select a square to move the piece to
-        # Also give option to jump back to previous loop to select a different piece
             to_square = None
             while ( not to_square or not self.is_checker_move_allowed ( from_square, to_square ) ):
                 to_square = self.get_to_square()
                 if ( to_square == None ):
                     from_square_selected = False
                     break
-        # Move the selected piece to the destination
         self.move_checker_to_square(from_square, to_square)
         vertical_distance = abs(to_square.coord[1] - from_square.coord[1])
         if ( vertical_distance == 2 ):
@@ -47,14 +41,6 @@ class CheckersGame:
                     if (abs(to_square.coord[1] - from_square.coord[1]) != 2):
                         print('You may only make consective jump moves following a jump')
         self.players_turn = "BLACK" if self.players_turn == "RED" else "RED"
-
-
-        # Remove option to exit back to previous loop to select different piece
-        # If player jumped a square, jump_continuation=True and allow player to continue to try to move selected piece
-        # Player can type pass once finished trying to move piece
-        # jump_continuation=False
-        # Flip player turn
-        pass
 
     def get_from_square(self):
         from_board_coord = ''
