@@ -1,14 +1,86 @@
 from abc import ABCMeta, abstractmethod
 import itertools
-# TODO Abstract base class for Square / Checker?
 
-# TODO currently able to move checkers 2 spaces without a checker of opposite color in the middle
+# TODO make a king_me function for Checker class
 
 class CheckersGame:
 
     def play(self):
         self.players_turn = "BLACK"
         self.gameboard = self.GameBoard()
+        while ( self.gameboard.checker_counts['RED'] > 0 or self.gameboard.checker_counts['BLACK'] > 0 ):
+            self.new_turn()
+
+    def new_turn(self):
+        game.gameboard.print_board()
+        # While currently selected piece color not equal to player color
+        print('New Turn')
+        turn_complete = False
+        from_square_selected = False
+        # Ask current player to select a square holding a piece to move
+        while ( not from_square_selected ):
+            from_square = self.get_from_square()
+            from_square_selected = True
+        # While the move selection is not valid:
+        # Ask current player to select a square to move the piece to
+        # Also give option to jump back to previous loop to select a different piece
+            to_square = None
+            while ( not to_square or not self.is_checker_move_allowed ( from_square, to_square ) ):
+                to_square = self.get_to_square()
+                if ( to_square == None ):
+                    from_square_selected = False
+                    break
+        # Move the selected piece to the destination
+        self.move_checker_to_square(from_square, to_square)
+        vertical_distance = abs(to_square.coord[1] - from_square.coord[1])
+        if ( vertical_distance == 2 ):
+            while ( not turn_complete ):
+                jumped_square = self.get_jumped_square(from_square, to_square)
+                self.remove_jumped_piece(jumped_square)
+                self.gameboard.print_board()
+                from_square = to_square
+                while (abs(to_square.coord[1] - from_square.coord[1]) != 2 or not self.is_checker_move_allowed(from_square, to_square)):
+                    to_square = self.get_to_square()
+                    if ( to_square == None ):
+                        turn_complete = True
+                        break
+                    if (abs(to_square.coord[1] - from_square.coord[1]) != 2):
+                        print('You may only make consective jump moves following a jump')
+        self.players_turn = "BLACK" if self.players_turn == "RED" else "RED"
+
+
+        # Remove option to exit back to previous loop to select different piece
+        # If player jumped a square, jump_continuation=True and allow player to continue to try to move selected piece
+        # Player can type pass once finished trying to move piece
+        # jump_continuation=False
+        # Flip player turn
+        pass
+
+    def get_from_square(self):
+        from_board_coord = ''
+        from_square = None
+        while ( not from_square ):
+            while ( len(from_board_coord) != 2 or ( from_board_coord[0] not in self.gameboard.columns and from_board_coord[1] not in self.gameboard.rows ) ):
+                print( 'Current player\'s turn: ' + self.players_turn )
+                from_board_coord = input('Please provide the coordinate of a piece you would like to move:\n').upper()
+            from_square = self.get_square_at_board_coord(from_board_coord)
+            if ( not from_square.checker or from_square.checker.color != self.players_turn ):
+                print( 'Invalid checker selection' )
+                from_board_coord = ''
+                from_square = None
+        return from_square
+
+    def get_to_square(self):
+        to_board_coord = ''
+        to_square = None
+        while ( len(to_board_coord) != 2 or ( to_board_coord[0] not in self.gameboard.columns and to_board_coord[1] not in self.gameboard.rows ) ):
+            to_board_coord = input('Please provide the coordinate of the square you would like to move your piece to:  (or type \'back\' to select a different checker to move / end your turn if you\'ve already moved)\n').upper()
+            if ( to_board_coord == 'BACK' ):
+                return None
+            if ( len(to_board_coord) != 2 or ( to_board_coord[0] not in self.gameboard.columns and to_board_coord[1] not in self.gameboard.rows ) ):
+                print( 'Invalid input' )
+        to_square = self.get_square_at_board_coord(to_board_coord)
+        return to_square
 
     def get_checker_at_board_coord(self, board_coord):
             row = self.gameboard.rows.index(board_coord[1])
@@ -31,66 +103,65 @@ class CheckersGame:
         to_square.checker = from_square.checker
         to_square.checker.coord = to_square.coord
         from_square.checker = None
+
+    def get_jumped_square(self, from_square, to_square):
+        vertical_direction = to_square.coord[1] - from_square.coord[1]
+        horizontal_direction = to_square.coord[0] - from_square.coord[0]
+        print('vertical direction: ' + str(vertical_direction))
+        print('horizontal direction: ' + str(horizontal_direction))
+        if ( abs(vertical_direction) == 2 ):
+            jumped_square = game.gameboard.board[from_square.coord[1] + int(vertical_direction/2)][from_square.coord[0] + int(horizontal_direction/2)]
+            return jumped_square
+        else:
+            return None
+
+
+    def remove_jumped_piece(self, jumped_square):
+        if (jumped_square):
+            self.gameboard.checker_counts[jumped_square.checker.color] -= 1
+            jumped_square.checker = None
+        else:
+            print('jumped_square is empty')
         
 
     def is_checker_move_allowed(self, from_square, to_square):
-        # Weed out the ignant moves
-        # No checker in selected square
-        if ( not from_square.checker ):
-            print( 'No checker to move at ' + str(from_square.board_coord) )
-            return False
-        # Selected checker doesn't belong to the player
-        if ( not from_square.checker.color == self.players_turn ):
-            print( 'The checker at ' + str(from_square.board_coord) + ' belongs to ' + from_square.checker.color + '. It is currently ' + self.players_turn + '\'S turn.' )
-            return False
-        # There's already a checker where player is trying to move the checker
-        if ( to_square.checker ):
-            print( 'There is already a checker at ' + str(to_square.board_coord) )
-            return False
-
-        # Okay down to business. Need some vectors and magnitudes
+        # Get movement direction and distance info
         vertical_direction = to_square.coord[1] - from_square.coord[1]
-        vertical_distance = abs(vertical_direction / from_square.checker.move_direction)
+        vertical_distance = abs(vertical_direction)
         horizontal_direction = to_square.coord[0] - from_square.coord[0]
         horizontal_distance = abs(horizontal_direction)
 
-        # If player tries to move checker piece the wrong direction
-        if ( not from_square.checker.is_king and vertical_direction / vertical_distance != from_square.checker.move_direction):
-            print( 'Invalid move ' + str(from_square.board_coord) + ' -> ' + str(to_square.board_coord) + '. Attempting to move checker in the wrong direction' )
+        # Verify checker exists at start square
+        if ( not from_square.checker ):
+            print( 'No checker to move at ' + str(from_square.board_coord) )
             return False
-        # If player tries to move a distance that is not 1 or 2 squares away
-        if ( vertical_distance not in range(1, 3) ):
-             print(str(vertical_distance))
-             print( 'Invalid move ' + str(from_square.board_coord) + ' -> ' + str(to_square.board_coord) + '. If jumping multiple pieces, please move one jump at a time.' )
-             return False
-        # If movement is not diagonal
+        # Verify checker in selected start square belongs to player
+        if ( not from_square.checker.color == self.players_turn ):
+            print( 'The checker at ' + str(from_square.board_coord) + ' belongs to ' + from_square.checker.color + '. It is currently ' + self.players_turn + '\'S turn.' )
+            return False
+        # Verify a checker doesn't already exist at the destination
+        if ( to_square.checker ):
+            print( 'There is already a checker at ' + str(to_square.board_coord) )
+            return False
+        # Verify attempted movement is diagonal
         if ( horizontal_distance != vertical_distance ):
              print( 'Invalid move ' + str(from_square.board_coord) + ' -> ' + str(to_square.board_coord) + '. Must move diagonally')
              return False
-        # If player is trying to make a jump but an appropriate checker doesn't exist in the jumped square
+        # Verify player is moving in the correct direction
+        if ( not from_square.checker.is_king and vertical_direction / vertical_distance != from_square.checker.move_direction):
+            print( 'Invalid move ' + str(from_square.board_coord) + ' -> ' + str(to_square.board_coord) + '. Attempting to move checker in the wrong direction' )
+            return False
+        # Verify player is attempting to move up to a max of two squares diagonally
+        if ( vertical_distance not in range(1, 3) ):
+             print( 'Invalid move ' + str(from_square.board_coord) + ' -> ' + str(to_square.board_coord) + '. If jumping multiple pieces, please move one jump at a time.' )
+             return False
+        # Verify that, if player is attempting to "jump" a square, a checker of the opposite color exists in the jumped square
         if ( vertical_distance == 2 ):
-            print("hello")
-            jumped_square = game.gameboard.board[from_square.coord[0] + int(vertical_direction/2)][from_square.coord[1] + int(horizontal_direction/2)]
+            jumped_square = game.gameboard.board[from_square.coord[1] + int(vertical_direction/2)][from_square.coord[0] + int(horizontal_direction/2)]
             if ( not jumped_square.checker or not jumped_square.checker.color != game.players_turn ):
                  print( 'Invalid move ' + str(from_square.board_coord) + ' -> ' + str(to_square.board_coord) + '. No checker of the opposite color at ' + str(jumped_square.board_coord))
                  return False
-        # WHEW if none of that stuff happened then return True
-        return True
-             
-
-
-        
-        if ( not from_square.checker.is_king ):
-##            if ( to_square.coord[1] - from_square.coord[1] not in range(from_square.checker.move_direction, from_square.checker.move_direction * 2 + from_square.checker.move_direction) ):
-##                print( 'Invalid move ' + str(from_square.board_coord) + ' -> ' + str(to_square.board_coord) + '. If jumping multiple pieces, please move one jump at a time.' )
-##                return False
-            if ( to_square.coord[1] - from_square.coord[1] == square.checker.move_direction ):
-                pass
-            elif ( to_square.coord[1] - from_square.coord[1] == square.checker.move_direction * 2 ):
-                pass
-            else:
-                print( 'Invalid move ' + str(from_square.board_coord) + ' -> ' + str(to_square.board_coord) + '. If jumping multiple pieces, please move one jump at a time.' )
-                return False
+        # WHEW if none of that stuff happened then YOU ALLOWED BOI
         return True
 
 
