@@ -8,8 +8,11 @@ class CheckersGame:
     def play(self):
         self.players_turn = "BLACK"
         self.gameboard = self.GameBoard()
-        while ( self.gameboard.checker_counts['RED'] > 0 or self.gameboard.checker_counts['BLACK'] > 0 ):
+        while ( self.gameboard.checker_counts['RED'] > 0 and self.gameboard.checker_counts['BLACK'] > 0 ):
             self.new_turn()
+        self.winner = "RED" if self.gameboard.checker_counts["BLACK"] == 0 else "RED"
+        print( self.winner + " WINS!" )
+        input()
 
     def new_turn(self):
         game.gameboard.print_board()
@@ -25,21 +28,25 @@ class CheckersGame:
                 if ( to_square == None ):
                     from_square_selected = False
                     break
-        self.move_checker_to_square(from_square, to_square)
         vertical_distance = abs(to_square.coord[1] - from_square.coord[1])
         if ( vertical_distance == 2 ):
             while ( not turn_complete ):
+                self.move_checker_to_square(from_square, to_square)
                 jumped_square = self.get_jumped_square(from_square, to_square)
                 self.remove_jumped_piece(jumped_square)
                 self.gameboard.print_board()
                 from_square = to_square
+                if ( self.gameboard.checker_counts["RED"] < 1 or self.gameboard.checker_counts["BLACK"] < 1 ):
+                    break
                 while (abs(to_square.coord[1] - from_square.coord[1]) != 2 or not self.is_checker_move_allowed(from_square, to_square)):
                     to_square = self.get_to_square()
                     if ( to_square == None ):
                         turn_complete = True
                         break
-                    if (abs(to_square.coord[1] - from_square.coord[1]) != 2):
+                    elif (abs(to_square.coord[1] - from_square.coord[1]) != 2):
                         print('You may only make consective jump moves following a jump')
+        else:
+            self.move_checker_to_square(from_square, to_square)
         self.players_turn = "BLACK" if self.players_turn == "RED" else "RED"
 
     def get_from_square(self):
@@ -89,6 +96,8 @@ class CheckersGame:
         to_square.checker = from_square.checker
         to_square.checker.coord = to_square.coord
         from_square.checker = None
+        if ( to_square.checker.coord[1] == to_square.checker.king_row ):
+            to_square.checker.king_me()
 
     def get_jumped_square(self, from_square, to_square):
         vertical_direction = to_square.coord[1] - from_square.coord[1]
@@ -283,6 +292,7 @@ class CheckersGame:
             self.needs_graphic_refresh = False
             self.set_move_direction()
             self.dimensions = (7, 3)
+            self.set_row_to_king()
             self.update_graphic()
 
         def set_board_coord(self):
@@ -297,6 +307,9 @@ class CheckersGame:
                 self.move_direction = -1
             else:
                 raise Exception("Invalid checker color: " + self.color + ". Must be RED or BLACK.")
+
+        def set_row_to_king(self):
+            self.king_row = 7 if self.coord[1] in range(3) else 0
 
         def update_graphic(self):
             self.graphic = []
@@ -318,6 +331,10 @@ class CheckersGame:
                     row_graphic += "_" * 5
                 row_graphic += "|"
                 self.graphic.append(row_graphic)
+
+        def king_me(self):
+            self.is_king = True
+            self.update_graphic()
         
 
     
@@ -325,4 +342,3 @@ class CheckersGame:
 
 game = CheckersGame()
 game.play()
-game.gameboard.print_board()
